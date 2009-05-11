@@ -42,6 +42,22 @@ void list_free(List* list) {
   free(list);
 }
 
+void list_clear(List* list) {
+  Node* node = list->first_node;
+  Node* next_node;
+
+  list->first_node = NULL;
+  list->last_node = NULL;
+
+  while(NULL != node) {
+    next_node = node->next;
+
+    free(node);
+
+    node = next_node;
+  }
+}
+
 void list_push(List* list, void* item) {
   Node* node = node_create();
   
@@ -64,7 +80,7 @@ void* list_pop(List* list) {
 
     item = node->item;
 
-    node_free(node);
+    free(node);
   }
 
   if(NULL == list->first_node) {

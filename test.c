@@ -1,5 +1,6 @@
 #include <GL/glfw.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "solid.h"
 #include "list.h"
@@ -36,18 +37,36 @@ void draw_solid_list(List* list) {
   }
 }
 
-int main( void )
+void setup_world(List* list, int number) {
+  Solid* solid;
+  int i;
+  int x;
+  int y;
+
+  for(i=0; i<number; i++) {
+    x = rand()%640-50;
+    y = rand()%480-50;
+    solid = solid_create(x, y, 50,50);
+    
+    x = (1-(rand()%2)*2)*(rand()%1+1);
+    y = (1-(rand()%2)*2)*(rand()%1+1);
+    solid_set_velocity(solid, x, y);
+
+    list_push(list, solid);
+    physics_add(solid);
+  }
+}
+
+int main( int argc, char* argv[] )
 {
     int running = GL_TRUE;
+    int threads;
+    int objects;
+    double t, t2;
+    double c;
     
     List* list = list_create();
     
-    list_push(list, solid_create(100,100,50,50));
-    list_push(list, solid_create(200,300,50,50));
-    list_push(list, solid_create(300,250,60,60));
-    
-    draw_solid_list(list);
-
     // Initialize GLFW
     glfwInit();
 
@@ -69,11 +88,28 @@ int main( void )
     glClearColor(0,0,0,1);                
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    physics_init(4);
+    if(argc == 3) {
+      sscanf(argv[1], "%d", &threads);
+      sscanf(argv[2], "%d", &objects);
+      physics_init(threads);
+      setup_world(list, objects);
+    } else {
+      physics_init(4);    
+      setup_world(list, 1000);
+    }
 
+    
     // Main loop
-    while( running )
-    {
+    t2 = t = glfwGetTime();
+
+    c = 0;
+    while( running ) {
+      c++;
+      if(glfwGetTime() - t > 1) {
+	fprintf(stderr, "FPS: %f\n", c / (glfwGetTime()-t2));
+	t = glfwGetTime();
+      }
+
       physics_tick();
       // OpenGL rendering goes here...
       glClear( GL_COLOR_BUFFER_BIT );
@@ -85,7 +121,6 @@ int main( void )
       // Check if ESC key was pressed or window was closed
       running = !glfwGetKey( GLFW_KEY_ESC ) &&
                    glfwGetWindowParam( GLFW_OPENED );      
-      glfwSleep(0.05);
     }
     
     physics_terminate();
