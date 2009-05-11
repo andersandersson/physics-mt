@@ -12,6 +12,7 @@ Node* node_create() {
 }
 
 void node_free(Node* node) {
+  free(node->item);
   free(node);
 }
 
@@ -33,7 +34,7 @@ void list_free(List* list) {
   while(NULL != node) {
     next_node = node->next;
 
-    free(node);
+    node_free(node);
 
     node = next_node;
   }

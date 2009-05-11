@@ -1,9 +1,30 @@
-test : test.o
-	gcc -g test.o -L/usr/X11R6/lib -lglfw -lGL -lGLU -lX11 -lpthread -lXxf86vm -lm -lXrandr -o test
+TARGET	:= test
+SRCS    := test.c solid.c list.c physics.c thread.c
+OBJS    := ${SRCS:.c=.o} 
+DEPS    := ${SRCS:.c=.dep} 
+XDEPS   := $(wildcard ${DEPS}) 
 
-test.o : test.c
-	gcc -g -c test.c -o test.o
+CCFLAGS = -std=gnu99 -O2 -Wall -Werror -g
+LDFLAGS =
+LIBS    = -L/usr/X11R6/lib -lglfw -lGL -lGLU -lX11 -lpthread -lXxf86vm -lm -lXrandr
 
-clean :
-	rm test
-	rm *.o
+.PHONY: all clean distclean 
+all:: ${TARGET} 
+
+ifneq (${XDEPS},) 
+include ${XDEPS} 
+endif 
+
+${TARGET}: ${OBJS} 
+	${CC} ${LDFLAGS} -o $@ $^ ${LIBS} 
+
+${OBJS}: %.o: %.c %.dep 
+	${CC} ${CCFLAGS} -o $@ -c $< 
+
+${DEPS}: %.dep: %.c Makefile 
+	${CC} ${CCFLAGS} -MM $< > $@ 
+
+clean:: 
+	-rm -f *~ *.o ${TARGET} 
+
+distclean::	clean
