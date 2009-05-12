@@ -79,7 +79,9 @@ void physics_detect_collisions(void* arg) {
   List* list = data->solid_list;
   List* collisions = data->collision_list;
   Node* node;
+  Node* node2;
   Solid* solid;
+  int i;
 
   if(NULL != list) {
     node = list->first_node;
@@ -96,6 +98,14 @@ void physics_detect_collisions(void* arg) {
 
     if(solid->y < 0 || solid->y > (480-solid->height)) {
       list_push(collisions, solid);
+    }
+
+    for(i=0; i<g_num_threads; i++) {
+      node2 = world[i].solid_list->first_node;
+
+      while(NULL != node2) {
+	node2 = node2->next;
+      }
     }
 
     node = node->next;
