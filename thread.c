@@ -42,15 +42,16 @@ void thread_release(Thread* thread) {
 }
 
 void thread_wait_call(Thread* thread) {
+  //fprintf(stderr, "[WAIT: %s", thread->name);
   thread_lock(thread);
   
-  //fprintf(stderr, "[WAIT CALL: %s", thread->name);
   while(1 == thread->awake) {
+    thread_signal(thread);
     glfwWaitCond(thread->signal, thread->lock, GLFW_INFINITY);
   }
-  //fprintf(stderr, "]\n");
   
   thread_release(thread);
+  //fprintf(stderr, "]\n");
 }
 
 void thread_call(Thread* thread, void (*function)(void*), void* param) {
@@ -68,10 +69,11 @@ void thread_join(Thread* thread) {
   thread_lock(thread);
   thread->alive = 0;
   thread->awake = 1;
-  thread_release(thread);
   thread_signal(thread);
 
+  glfwWaitCond(thread->signal, thread->lock, GLFW_INFINITY);
   glfwWaitThread(thread->thread_id, GLFW_INFINITY);
+  thread_release(thread);
   glfwDestroyMutex(thread->lock);
   glfwDestroyCond(thread->signal);
 }
@@ -85,14 +87,13 @@ void GLFWCALL thread_loop(void* arg) {
   thread->alive = 1;
   thread->awake = 0;
 
-  fprintf(stderr, "%s came alive!\n", thread->name);
+  //fprintf(stderr, "%s came alive!\n", thread->name);
 
-  glfwUnlockMutex(thread->lock);
   glfwSignalCond(thread->signal);
-  glfwLockMutex(thread->lock);
-  
-  while(1 == thread->alive) {
+
+  while(1 == thread->alive) {    
     while(0 == thread->awake) {
+      thread_signal(thread);
       glfwWaitCond(thread->signal, thread->lock, GLFW_INFINITY);
     }
 
@@ -101,6 +102,9 @@ void GLFWCALL thread_loop(void* arg) {
     }
 
     thread->awake = 0;
-    glfwSignalCond(thread->signal);
+    thread_signal(thread);
   }
+
+  thread_signal(thread);
+  glfwUnlockMutex(thread->lock);
 }

@@ -180,13 +180,16 @@ void physics_terminate() {
   int i;
 
   for(i=0; i<g_num_threads; i++) {
+    //fprintf(stderr, "[%s left.]\n", world[i].thread->name);
+    thread_join(world[i].thread);
+  }
+  for(i=0; i<g_num_threads; i++) {
     list_clear(world[i].solid_list);
     list_clear(world[i].collision_list);
 
-    thread_join(world[i].thread);
-    fprintf(stderr, "[%s left.]\n", world[i].thread->name);
-
     free(world[i].thread);
+    free(world[i].solid_list);
+    free(world[i].collision_list);
   }
 
   free(world);

@@ -62,6 +62,7 @@ int main( int argc, char* argv[] )
     int running = GL_TRUE;
     int threads;
     int objects;
+    int o;
     double t, t2;
     double c;
     
@@ -70,7 +71,7 @@ int main( int argc, char* argv[] )
     // Initialize GLFW
     glfwInit();
 
-    fprintf(stderr, "GLFW initialized...\n");
+    //fprintf(stderr, "GLFW initialized...\n");
 
     // Open an OpenGL window
     if( !glfwOpenWindow( 640,480, 0,0,0,0,0,0, GLFW_WINDOW ) )
@@ -89,27 +90,37 @@ int main( int argc, char* argv[] )
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if(argc == 3) {
-      sscanf(argv[1], "%d", &threads);
-      sscanf(argv[2], "%d", &objects);
-      physics_init(threads);
-      setup_world(list, objects);
+       sscanf(argv[1], "%d", &threads);
+       sscanf(argv[2], "%d", &objects);
     } else {
-      physics_init(4);    
-      setup_world(list, 1000);
-    }
+       threads = 1;
+       objects = 1000;
+    } 
+
+    physics_init(1);
+    setup_world(list, objects);
 
     
     // Main loop
     t2 = t = glfwGetTime();
 
     c = 0;
-    while( running ) {
-      c++;
-      if(glfwGetTime() - t > 1) {
-	fprintf(stderr, "FPS: %f\n", c / (glfwGetTime()-t2));
-	t = glfwGetTime();
-      }
+    o = 1;
+    while( running && o <= threads) {
+      c++;	
 
+      if(glfwGetTime() - t > 2.0) {
+   	fprintf(stdout, "Threads: %d, FPS: %.1f\n", o, c / (glfwGetTime()-t2));
+        o++;
+        physics_terminate();
+        list_free(list);
+        list = list_create();
+        physics_init(o);
+        setup_world(list, objects);
+        c = 0;
+        t2 = glfwGetTime();
+        t = glfwGetTime();
+      }
       physics_tick();
       // OpenGL rendering goes here...
       glClear( GL_COLOR_BUFFER_BIT );
@@ -122,6 +133,8 @@ int main( int argc, char* argv[] )
       running = !glfwGetKey( GLFW_KEY_ESC ) &&
                    glfwGetWindowParam( GLFW_OPENED );      
     }
+
+    
     
     physics_terminate();
     // Close window and terminate GLFW
